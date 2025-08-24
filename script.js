@@ -394,7 +394,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newBreakTimeGroup = document.createElement('div');
                 newBreakTimeGroup.classList.add('mb-3', 'border', 'p-2', 'rounded', 'break-time-group');
                 newBreakTimeGroup.innerHTML = `
-                    <label class="form-label">休憩時間</label>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="input-group mb-1">

@@ -24,26 +24,47 @@
                         <label for="record-date" class="form-label">日付</label>
                         <input type="date" class="form-control" id="record-date" required>
                     </div>
-                    <div class="mb-3">
-                        <label for="start-time" class="form-label">開始時間</label>
-                        <div class="input-group">
-                            <input type="time" class="form-control" id="start-time" required>
-                            <button class="btn btn-outline-secondary current-time-btn" type="button">現在時刻を記入</button>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="start-time" class="form-label">開始時間</label>
+                                <div class="input-group">
+                                    <input type="time" class="form-control" id="start-time" required>
+                                    <button class="btn btn-outline-secondary current-time-btn" type="button">現在時刻を記入</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="end-time" class="form-label">終了時間</label>
+                                <div class="input-group">
+                                    <input type="time" class="form-control" id="end-time" required>
+                                    <button class="btn btn-outline-secondary current-time-btn" type="button">現在時刻を記入</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label for="end-time" class="form-label">終了時間</label>
-                        <div class="input-group">
-                            <input type="time" class="form-control" id="end-time" required>
-                            <button class="btn btn-outline-secondary current-time-btn" type="button">現在時刻を記入</button>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">休憩時間 (複数回入力可)</label>
+                        <label class="form-label">休憩時間</label>
                         <div id="break-times-container">
-                            <div class="input-group mb-2">
-                                <input type="text" class="form-control break-time-input" placeholder="例: 0:15">
-                                <button class="btn btn-outline-danger remove-break-time" type="button">削除</button>
+                            <div class="mb-3 border p-2 rounded"> <!-- Initial break time group -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="input-group mb-1">
+                                            <span class="input-group-text">開始</span>
+                                            <input type="time" class="form-control break-start-time-input">
+                                            <button class="btn btn-outline-secondary current-time-btn" type="button">記入</button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="input-group mb-2">
+                                            <span class="input-group-text">終了</span>
+                                            <input type="time" class="form-control break-end-time-input">
+                                            <button class="btn btn-outline-secondary current-time-btn" type="button">記入</button>
+                                            <button class="btn btn-outline-danger remove-break-time" type="button">削除</button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <button class="btn btn-outline-secondary btn-sm" type="button" id="add-break-time">休憩を追加</button>

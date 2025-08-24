@@ -1,9 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("script.js is running");
     // --- Common elements for both index.html and record.html ---
     const currentMonthEl = document.getElementById('current-month');
     const calendarGridEl = document.getElementById('calendar-grid');
     const prevMonthBtn = document.getElementById('prev-month-btn');
-    const nextMonthBtn = document.getElementById('next-month-btn');
+    const nextMonthBtn = document.getElementById('next-month');
 
     let currentDate = new Date();
 
@@ -51,15 +52,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        prevMonthBtn.addEventListener('click', () => {
-            currentDate.setMonth(currentDate.getMonth() - 1);
-            renderCalendar();
-        });
+        if (prevMonthBtn) {
+            prevMonthBtn.addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                renderCalendar();
+            });
+        }
 
-        nextMonthBtn.addEventListener('click', () => {
-            currentDate.setMonth(currentDate.getMonth() + 1);
-            renderCalendar();
-        });
+        if (nextMonthBtn) {
+            nextMonthBtn.addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                renderCalendar();
+            });
+        }
 
         renderCalendar();
             updateStatistics();
@@ -174,16 +179,22 @@ document.addEventListener('DOMContentLoaded', () => {
             newBreakTimeGroup.classList.add('mb-3', 'border', 'p-2', 'rounded'); // Add some styling for clarity
             newBreakTimeGroup.innerHTML = `
                 <label class="form-label">休憩時間</label>
-                <div class="input-group mb-1">
-                    <span class="input-group-text">開始</span>
-                    <input type="time" class="form-control break-start-time-input">
-                    <button class="btn btn-outline-secondary current-time-btn" type="button">記入</button>
-                </div>
-                <div class="input-group mb-2">
-                    <span class="input-group-text">終了</span>
-                    <input type="time" class="form-control break-end-time-input">
-                    <button class="btn btn-outline-secondary current-time-btn" type="button">記入</button>
-                    <button class="btn btn-outline-danger remove-break-time" type="button">削除</button>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="input-group mb-1">
+                            <span class="input-group-text">開始</span>
+                            <input type="time" class="form-control break-start-time-input">
+                            <button class="btn btn-outline-secondary current-time-btn" type="button">記入</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="input-group mb-2">
+                            <span class="input-group-text">終了</span>
+                            <input type="time" class="form-control break-end-time-input">
+                            <button class="btn btn-outline-secondary current-time-btn" type="button">記入</button>
+                            <button class="btn btn-outline-danger remove-break-time" type="button">削除</button>
+                        </div>
+                    </div>
                 </div>
             `;
             breakTimesContainer.appendChild(newBreakTimeGroup);
@@ -320,5 +331,3 @@ function minutesToHHMM(totalMinutes) {
     const minutes = totalMinutes % 60;
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 }
-    }
-});

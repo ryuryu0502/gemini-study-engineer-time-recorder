@@ -29,30 +29,49 @@
             </div>
         </div>
 
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">今月の目標達成状況</h5>
+                <div id="goal-progress-container">
+                    <p>目標が設定されていません。</p>
+                </div>
+                <div class="progress" style="height: 25px;">
+                    <div id="goal-progress-bar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                </div>
+            </div>
+        </div>
+
         <div class="row text-center mt-4">
-            <div class="col">
-                <div class="card">
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
                     <div class="card-body">
                         <h5 class="card-title">今月の合計</h5>
                         <p id="total-month-time" class="card-text fs-4">--:--</p>
                     </div>
                 </div>
             </div>
-            <div class="col">
-                <div class="card">
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
                     <div class="card-body">
                         <h5 class="card-title">平日平均</h5>
                         <p id="weekday-avg-time" class="card-text fs-4">--:--</p>
                     </div>
                 </div>
             </div>
-            <div class="col">
-                <div class="card">
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
                     <div class="card-body">
                         <h5 class="card-title">休日平均</h5>
                         <p id="weekend-avg-time" class="card-text fs-4">--:--</p>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">週間学習グラフ</h5>
+                <canvas id="weekly-chart"></canvas>
             </div>
         </div>
     </div>
@@ -68,7 +87,13 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <p>ここに設定項目が入ります。</p>
+            <div class="mb-3">
+                <label for="monthly-goal-input" class="form-label">今月の目標勉強時間（時間）</label>
+                <input type="number" class="form-control" id="monthly-goal-input" min="1" placeholder="例: 50">
+            </div>
+            <button id="save-goal-btn" class="btn btn-primary mb-3">目標を保存</button>
+            <hr>
+            <h5>データ管理</h5>
             <button id="backup-button" class="btn btn-secondary">バックアップを作成</button>
           </div>
         </div>
@@ -76,6 +101,38 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="script.js"></script>
+
+    <!-- Toast Container -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="save-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">学習記録アプリ</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                記録を保存しました！
+            </div>
+        </div>
+        <div id="delete-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">学習記録アプリ</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                記録を削除しました。
+            </div>
+        </div>
+        <div id="goal-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">学習記録アプリ</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                目標を保存しました！
+            </div>
+        </div>
+    </div>
 </body>
 </html>

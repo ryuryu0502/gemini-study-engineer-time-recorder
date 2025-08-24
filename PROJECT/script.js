@@ -141,6 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const endTimeInput = document.getElementById('end-time');     // New
         const breakTimesContainer = document.getElementById('break-times-container');
         const addBreakTimeBtn = document.getElementById('add-break-time');
+        const memoInput = document.getElementById('memo-input'); // New: Memo input
 
         // Function to get current time in HH:MM format
         function getCurrentTime() {
@@ -172,6 +173,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const month = String(today.getMonth() + 1).padStart(2, '0');
             const day = String(today.getDate()).padStart(2, '0');
             recordDateInput.value = `${year}-${month}-${day}`;
+        }
+
+        // Load existing record for the date and populate memo
+        const existingRecords = getLearningRecords();
+        const currentRecord = existingRecords.find(r => r.date === recordDateInput.value);
+        if (currentRecord && memoInput) {
+            memoInput.value = currentRecord.memo || '';
         }
 
         addBreakTimeBtn.addEventListener('click', () => {
@@ -280,7 +288,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 breakTimeMinutes: totalBreakMinutes,
                 rawStartTime: startTime,
                 rawEndTime: endTime,
-                rawBreakTimes: breakTimes // Keep raw times for backup/display if needed
+                rawBreakTimes: breakTimes, // Keep raw times for backup/display if needed
+                memo: memoInput.value // New: Memo content
             };
 
             // Load existing records, add new one, and save

@@ -7,10 +7,10 @@
 *   フェーズ4: 設定機能の実装
 *   フェーズ5: データ管理と永続化
 *   フェーズ6: 非機能要件の対応
-*   フェーズ7: テストとデバッグ (手動テスト計画の策定と実施)
+*   フェーズ7: テストとデバッグ (手動テスト計画の策定と実施、バグ修正)
 *   フェーズ8: ドキュメンテーションとデプロイ準備 (README.mdの更新)
 
-**最終コミット:** `feat: Complete Learning Record App implementation based on requirements`
+**最終コミット:** `fix: Resolve calendar display issue and refine break time input layout`
 **プッシュ状況:** GitHubにプッシュ済み。
 
 次の作業指示をお待ちしています。

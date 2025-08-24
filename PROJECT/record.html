@@ -73,10 +73,39 @@
                         <label for="memo-input" class="form-label">メモ</label>
                         <textarea class="form-control" id="memo-input" rows="3"></textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">保存</button>
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">保存</button>
+                        <button type="button" class="btn btn-info text-white" id="tweet-btn" style="display: none;">この日の記録をツイート 🐦</button>
+                        <button type="button" class="btn btn-danger" id="delete-btn" style="display: none;">この日の記録を削除</button>
+                    </div>
                 </form>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="script.js"></script> <!-- Reusing main script.js -->
+
+    <!-- Toast Container -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="save-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">学習記録アプリ</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                記録を保存しました！
+            </div>
+        </div>
+        <div id="delete-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">学習記録アプリ</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                記録を削除しました。
+            </div>
+        </div>
+    </div>
 </body>
 </html>

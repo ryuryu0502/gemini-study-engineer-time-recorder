@@ -10,6 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('learningRecords', JSON.stringify(records));
     }
 
+    function getMonthlyGoal() {
+        return JSON.parse(localStorage.getItem('monthlyGoalHours'));
+    }
+
+    function saveMonthlyGoal(hours) {
+        localStorage.setItem('monthlyGoalHours', JSON.stringify(hours));
+    }
+
     function timeToMinutes(timeStr) {
         if (!timeStr) return 0;
         const [hours, minutes] = timeStr.split(':').map(Number);
@@ -44,8 +52,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const nextMonthBtn = document.getElementById('next-month-btn');
         const addRecordFab = document.getElementById('add-record-fab');
         const backupButton = document.getElementById('backup-button');
+        const monthlyGoalInput = document.getElementById('monthly-goal-input');
+        const saveGoalBtn = document.getElementById('save-goal-btn');
+        const settingsModal = document.getElementById('settingsModal');
 
         let currentDate = new Date();
+        let weeklyChart = null;
 
         function renderCalendar() {
             calendarGridEl.innerHTML = '';
@@ -102,7 +114,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const weekdayRecords = new Set();
             const weekendRecords = new Set();
 
-
             records.forEach(record => {
                 const recordDate = new Date(record.date);
                 if (recordDate.getFullYear() === currentYear && recordDate.getMonth() === currentMonth) {
@@ -130,6 +141,124 @@ document.addEventListener('DOMContentLoaded', () => {
             if(totalMonthTimeEl) totalMonthTimeEl.textContent = minutesToHHMM(totalMonthStudyMinutes);
             if(weekdayAvgTimeEl) weekdayAvgTimeEl.textContent = weekdayCount > 0 ? minutesToHHMM(weekdayStudyMinutes / weekdayCount) : '--:--';
             if(weekendAvgTimeEl) weekendAvgTimeEl.textContent = weekendCount > 0 ? minutesToHHMM(weekendStudyMinutes / weekendCount) : '--:--';
+
+            renderWeeklyChart(records, currentYear, currentMonth);
+
+            // Update Goal Progress
+            const monthlyGoal = getMonthlyGoal();
+            const goalProgressContainer = document.getElementById('goal-progress-container');
+            const goalProgressBar = document.getElementById('goal-progress-bar');
+
+            if (monthlyGoal && monthlyGoal > 0) {
+                const goalMinutes = monthlyGoal * 60;
+                const progressPercentage = Math.min((totalMonthStudyMinutes / goalMinutes) * 100, 100);
+
+                goalProgressContainer.innerHTML = `
+                    <strong>目標:</strong> ${monthlyGoal}時間 /
+                    <strong>現在:</strong> ${minutesToHHMM(totalMonthStudyMinutes)}
+                `;
+                goalProgressBar.style.width = `${progressPercentage.toFixed(2)}%`;
+                goalProgressBar.textContent = `${progressPercentage.toFixed(1)}%`;
+                goalProgressBar.setAttribute('aria-valuenow', progressPercentage);
+
+            } else {
+                goalProgressContainer.innerHTML = `<p>目標が設定されていません。「設定」から目標時間を登録してください。</p>`;
+                goalProgressBar.style.width = `0%`;
+                goalProgressBar.textContent = `0%`;
+            }
+        }
+
+        function renderWeeklyChart(records, year, month) {
+            const ctx = document.getElementById('weekly-chart');
+            if (!ctx) return;
+
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const weeklyData = [0, 0, 0, 0, 0]; // 1-7, 8-14, 15-21, 22-28, 29+
+            const labels = ["第1週", "第2週", "第3週", "第4週", "第5週"];
+
+            records.forEach(record => {
+                const recordDate = new Date(record.date);
+                if (recordDate.getFullYear() === year && recordDate.getMonth() === month) {
+                    const day = recordDate.getDate();
+                    const studyHours = (record.studyTimeMinutes || 0) / 60;
+                    if (day <= 7) weeklyData[0] += studyHours;
+                    else if (day <= 14) weeklyData[1] += studyHours;
+                    else if (day <= 21) weeklyData[2] += studyHours;
+                    else if (day <= 28) weeklyData[3] += studyHours;
+                    else weeklyData[4] += studyHours;
+                }
+            });
+
+            // If the month has fewer than 29 days, remove the 5th week label/data
+            if (daysInMonth < 29) {
+                weeklyData.pop();
+                labels.pop();
+            }
+
+            if (weeklyChart) {
+                weeklyChart.destroy();
+            }
+
+            weeklyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '学習時間 (時間)',
+                        data: weeklyData.map(h => h.toFixed(2)), // Round to 2 decimal places
+                        backgroundColor: 'rgba(0, 123, 255, 0.5)',
+                        borderColor: 'rgba(0, 123, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '時間'
+                            }
+                        }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        if (settingsModal) {
+            // Load goal when modal is shown
+            settingsModal.addEventListener('show.bs.modal', () => {
+                const currentGoal = getMonthlyGoal();
+                if (currentGoal && monthlyGoalInput) {
+                    monthlyGoalInput.value = currentGoal;
+                }
+            });
+        }
+
+        if (saveGoalBtn) {
+            saveGoalBtn.addEventListener('click', () => {
+                const goalValue = monthlyGoalInput.value;
+                if (goalValue && !isNaN(goalValue) && goalValue > 0) {
+                    saveMonthlyGoal(Number(goalValue));
+
+                    // Show toast notification
+                    const toastEl = document.getElementById('goal-toast');
+                    if (toastEl) {
+                        const toast = new bootstrap.Toast(toastEl);
+                        toast.show();
+                    }
+
+                    // Close the modal
+                    const modalInstance = bootstrap.Modal.getInstance(settingsModal);
+                    if(modalInstance) modalInstance.hide();
+
+                    updateStatistics(); // Refresh statistics display
+                } else {
+                    alert('有効な目標時間を時間単位で入力してください。');
+                }
+            });
         }
 
         if (prevMonthBtn) {
@@ -300,8 +429,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 saveLearningRecords(records);
 
-                alert('記録を保存しました！');
-                window.location.href = 'index.html';
+                // Show toast notification instead of alert
+                const toastEl = document.getElementById('save-toast');
+                if (toastEl) {
+                    const toast = new bootstrap.Toast(toastEl);
+                    toast.show();
+                }
+
+                // Redirect after a short delay
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500); // 1.5 second delay
             });
         }
 
@@ -314,16 +452,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const records = getLearningRecords();
         const record = records.find(r => r.date === targetDate);
+        const tweetBtn = document.getElementById('tweet-btn');
+        const deleteBtn = document.getElementById('delete-btn');
+
         if (record) {
             if(startTimeInput) startTimeInput.value = record.rawStartTime || '';
             if(endTimeInput) endTimeInput.value = record.rawEndTime || '';
             if(memoInput) memoInput.value = record.memo || '';
             if (record.rawBreakTimes && breakTimesContainer) {
+                // Clear the initial empty break time group before adding saved ones
+                const initialBreakGroup = breakTimesContainer.querySelector('.break-time-group');
+                if(initialBreakGroup && !initialBreakGroup.querySelector('.break-start-time-input').value) {
+                    initialBreakGroup.remove();
+                }
+
                 record.rawBreakTimes.forEach(bt => {
-                    addBreakTimeBtn.click();
+                    if(addBreakTimeBtn) addBreakTimeBtn.click();
                     const newGroup = breakTimesContainer.lastElementChild;
-                    newGroup.querySelector('.break-start-time-input').value = bt.start;
-                    newGroup.querySelector('.break-end-time-input').value = bt.end;
+                    if(newGroup) {
+                        newGroup.querySelector('.break-start-time-input').value = bt.start;
+                        newGroup.querySelector('.break-end-time-input').value = bt.end;
+                    }
+                });
+            }
+            // Show and setup tweet button if a record exists
+            if (tweetBtn && record.studyTimeMinutes > 0) {
+                tweetBtn.style.display = 'block';
+                tweetBtn.addEventListener('click', () => {
+                    const studyTimeFormatted = minutesToHHMM(record.studyTimeMinutes);
+                    const tweetText = `今日の勉強時間は ${studyTimeFormatted} でした！📝 #学習記録`;
+                    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+                    window.open(twitterUrl, '_blank');
+                });
+            }
+
+            // Show and setup delete button if a record exists
+            if (deleteBtn) {
+                deleteBtn.style.display = 'block';
+                deleteBtn.addEventListener('click', () => {
+                    if (confirm('この日の記録を本当に削除しますか？この操作は元に戻せません。')) {
+                        const updatedRecords = records.filter(r => r.date !== targetDate);
+                        saveLearningRecords(updatedRecords);
+
+                        // Show delete confirmation toast
+                        const toastEl = document.getElementById('delete-toast');
+                        if (toastEl) {
+                            const toast = new bootstrap.Toast(toastEl);
+                            toast.show();
+                        }
+
+                        // Redirect after a short delay
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1500);
+                    }
                 });
             }
         }

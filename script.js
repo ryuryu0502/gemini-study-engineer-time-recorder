@@ -65,7 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentMonthEl = document.getElementById('current-month');
         const prevMonthBtn = document.getElementById('prev-month-btn');
         const nextMonthBtn = document.getElementById('next-month-btn');
-        const addRecordFab = document.getElementById('add-record-fab');
         const backupButton = document.getElementById('backup-button');
         const monthlyGoalInput = document.getElementById('monthly-goal-input');
         const saveGoalBtn = document.getElementById('save-goal-btn');
@@ -305,16 +304,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentDate.setMonth(currentDate.getMonth() + 1);
                 renderCalendar();
                 updateStatistics();
-            });
-        }
-
-        if (addRecordFab) {
-            addRecordFab.addEventListener('click', () => {
-                const today = new Date();
-                const year = today.getFullYear();
-                const month = String(today.getMonth() + 1).padStart(2, '0');
-                const day = String(today.getDate()).padStart(2, '0');
-                window.location.href = `record.html?date=${year}-${month}-${day}`;
             });
         }
 

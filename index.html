@@ -78,10 +78,22 @@
             </div>
         </div>
 
-        <div class="card mt-4">
-            <div class="card-body">
-                <h5 class="card-title">週間学習グラフ</h5>
-                <canvas id="weekly-chart"></canvas>
+        <div class="row">
+            <div class="col-md-7">
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title">週間学習グラフ</h5>
+                        <canvas id="weekly-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title">カテゴリ別学習時間</h5>
+                        <canvas id="category-chart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -101,9 +113,19 @@
                 <div class="card-body">
                     <h5 class="card-title">学習記録の入力</h5>
                     <form id="record-form">
-                        <div class="mb-3">
-                            <label for="record-date" class="form-label">日付</label>
-                            <input type="date" class="form-control" id="record-date" required>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    <label for="record-date" class="form-label">日付</label>
+                                    <input type="date" class="form-control" id="record-date" required>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    <label for="record-category" class="form-label">カテゴリ</label>
+                                    <select id="record-category" class="form-select"></select>
+                                </div>
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-md-6">
@@ -183,8 +205,23 @@
             <h5>アプリのインストール</h5>
             <button id="install-pwa-button" class="btn btn-success" style="display: none;">アプリをインストール</button>
             <hr>
+            <h5>カテゴリ管理</h5>
+            <div id="category-manager">
+                <div class="input-group mb-3">
+                    <input type="text" id="new-category-input" class="form-control" placeholder="新しいカテゴリ名">
+                    <button class="btn btn-outline-secondary" type="button" id="add-category-btn">追加</button>
+                </div>
+                <ul id="category-list" class="list-group">
+                    <!-- Categories will be dynamically inserted here -->
+                </ul>
+            </div>
+            <hr>
             <h5>データ管理</h5>
-            <button id="backup-button" class="btn btn-secondary">バックアップを作成</button>
+            <div class="d-grid gap-2">
+                <button id="backup-button" class="btn btn-secondary">バックアップを作成</button>
+                <button id="import-button" class="btn btn-outline-secondary">インポート</button>
+                <input type="file" id="import-file-input" style="display: none;" accept="application/json">
+            </div>
           </div>
         </div>
       </div>

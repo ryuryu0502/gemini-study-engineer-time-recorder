@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let weeklyChart = null;
 
         function renderCalendar() {
+            const records = getLearningRecords();
             calendarGridEl.innerHTML = '';
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
@@ -87,9 +88,23 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayCell = document.createElement('div');
                 dayCell.classList.add('day');
-                dayCell.textContent = day;
+
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 dayCell.dataset.date = dateStr;
+
+                // Add day number
+                const dayNumberEl = document.createElement('span');
+                dayNumberEl.textContent = day;
+                dayCell.appendChild(dayNumberEl);
+
+                // Find record for this day and display study time
+                const record = records.find(r => r.date === dateStr);
+                if (record && record.studyTimeMinutes > 0) {
+                    const studyTimeEl = document.createElement('div');
+                    studyTimeEl.classList.add('study-time');
+                    studyTimeEl.textContent = minutesToHHMM(record.studyTimeMinutes);
+                    dayCell.appendChild(studyTimeEl);
+                }
 
                 const today = new Date();
                 if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {

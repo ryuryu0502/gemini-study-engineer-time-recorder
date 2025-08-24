@@ -1,13 +1,20 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log("script.js is running for SPA");
 
-    // --- Global State & Helper Functions ---
+    // --- Global State ---
     let deferredPrompt;
     let currentDate = new Date();
     let weeklyChart = null;
     let categoryChart = null;
     const toastInstances = {};
+    let pomoInterval = null;
+    let pomoState = 'stopped'; // 'running', 'paused'
+    let pomoMode = 'work'; // 'work', 'short_break', 'long_break'
+    let pomoSecondsLeft = 25 * 60;
+    let pomoSessions = 0;
+    const POMO_DURATIONS = { work: 25 * 60, short_break: 5 * 60, long_break: 15 * 60 };
 
+    // --- Helper Functions ---
     function getLearningRecords() { return JSON.parse(localStorage.getItem('learningRecords') || '[]'); }
     function saveLearningRecords(records) { localStorage.setItem('learningRecords', JSON.stringify(records)); }
     function getMonthlyGoal() { return JSON.parse(localStorage.getItem('monthlyGoalHours')); }
@@ -31,25 +38,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const minutes = Math.round(totalMinutes % 60);
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     }
-    function showToast(id) {
-        if (!toastInstances[id]) {
-            const toastEl = document.getElementById(id);
-            if (toastEl) toastInstances[id] = new bootstrap.Toast(toastEl);
+    function showToast(id, message = null) {
+        const toastEl = document.getElementById(id);
+        if (!toastEl) return;
+        const toastBody = toastEl.querySelector('.toast-body');
+        if (message && toastBody) {
+            toastBody.textContent = message;
         }
-        if (toastInstances[id]) toastInstances[id].show();
+        if (!toastInstances[id]) toastInstances[id] = new bootstrap.Toast(toastEl);
+        toastInstances[id].show();
     }
 
     // --- Views & Router ---
     const views = {
         dashboard: document.getElementById('view-dashboard'),
         record: document.getElementById('view-record'),
+        pomodoro: document.getElementById('view-pomodoro'),
     };
     const navItems = {
         dashboard: document.getElementById('nav-dashboard'),
         addRecord: document.getElementById('nav-add-record'),
+        pomodoro: document.getElementById('nav-pomodoro'),
         settings: document.getElementById('nav-settings'),
     };
-
     function navigateTo(viewName, context = {}) {
         Object.values(views).forEach(view => view.style.display = 'none');
         Object.values(navItems).forEach(item => item.classList.remove('active'));
@@ -58,56 +69,66 @@ document.addEventListener('DOMContentLoaded', () => {
             if (navItems[viewName]) navItems[viewName].classList.add('active');
             if(viewName === 'record') navItems.addRecord.classList.add('active');
         }
-        if (viewName === 'record') prepareRecordView(context.date);
+        if (viewName === 'record') prepareRecordView(context);
         else if (viewName === 'dashboard') updateDashboard();
+        else if (viewName === 'pomodoro') preparePomodoroView();
         window.scrollTo(0, 0);
     }
 
     // --- View Preparation & Rendering ---
-    function prepareRecordView(dateStr) {
-        const targetDate = dateStr || new Date().toISOString().split('T')[0];
-        document.getElementById('record-date').value = targetDate;
-
+    function prepareRecordView(context) {
+        const dateStr = context.date || new Date().toISOString().split('T')[0];
+        document.getElementById('record-date').value = dateStr;
         const categorySelect = document.getElementById('record-category');
-        const categories = getStudyCategories();
         categorySelect.innerHTML = '';
-        categories.forEach(category => {
+        getStudyCategories().forEach(c => {
             const option = document.createElement('option');
-            option.value = category;
-            option.textContent = category;
+            option.value = c; option.textContent = c;
             categorySelect.appendChild(option);
         });
-
-        document.getElementById('start-time').value = '';
-        document.getElementById('end-time').value = '';
+        document.getElementById('start-time').value = context.startTime || '';
+        document.getElementById('end-time').value = context.endTime || '';
         document.getElementById('memo-input').value = '';
         document.getElementById('break-times-container').innerHTML = `<div class="mb-3 border p-2 rounded break-time-group"><div class="row"><div class="col-md-6"><div class="input-group mb-1"><span class="input-group-text">開始</span><input type="time" class="form-control break-start-time-input"><button class="btn btn-outline-secondary current-time-btn" type="button">記入</button></div></div><div class="col-md-6"><div class="input-group mb-2"><span class="input-group-text">終了</span><input type="time" class="form-control break-end-time-input"><button class="btn btn-outline-secondary current-time-btn" type="button">記入</button><button class="btn btn-outline-danger remove-break-time" type="button">削除</button></div></div></div></div>`;
         document.getElementById('tweet-btn').style.display = 'none';
         document.getElementById('delete-btn').style.display = 'none';
-
-        const record = getLearningRecords().find(r => r.date === targetDate);
+        const record = getLearningRecords().find(r => r.date === dateStr);
         if (record) {
             document.getElementById('start-time').value = record.rawStartTime || '';
             document.getElementById('end-time').value = record.rawEndTime || '';
             document.getElementById('memo-input').value = record.memo || '';
             categorySelect.value = record.category || 'その他';
-
-            const breakTimesContainer = document.getElementById('break-times-container');
+            const breakContainer = document.getElementById('break-times-container');
             if (record.rawBreakTimes && record.rawBreakTimes.length > 0) {
-                breakTimesContainer.innerHTML = '';
+                breakContainer.innerHTML = '';
                 record.rawBreakTimes.forEach(bt => addBreakTimeRow(bt.start, bt.end));
             }
             if (record.studyTimeMinutes > 0) document.getElementById('tweet-btn').style.display = 'block';
             document.getElementById('delete-btn').style.display = 'block';
         }
     }
-
     function addBreakTimeRow(start = '', end = '') {
         const container = document.getElementById('break-times-container');
         const newGroup = document.createElement('div');
         newGroup.className = 'mb-3 border p-2 rounded break-time-group';
         newGroup.innerHTML = `<div class="row"><div class="col-md-6"><div class="input-group mb-1"><span class="input-group-text">開始</span><input type="time" class="form-control break-start-time-input" value="${start}"><button class="btn btn-outline-secondary current-time-btn" type="button">現在</button></div></div><div class="col-md-6"><div class="input-group mb-2"><span class="input-group-text">終了</span><input type="time" class="form-control break-end-time-input" value="${end}"><button class="btn btn-outline-secondary current-time-btn" type="button">現在</button><button class="btn btn-outline-danger remove-break-time" type="button">削除</button></div></div></div>`;
         container.appendChild(newGroup);
+    }
+    function renderCategoryList() {
+        const listEl = document.getElementById('category-list');
+        if (!listEl) return;
+        listEl.innerHTML = '';
+        getStudyCategories().forEach(c => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+            li.textContent = c;
+            const delBtn = document.createElement('button');
+            delBtn.className = 'btn btn-outline-danger btn-sm delete-category-btn';
+            delBtn.textContent = '削除';
+            delBtn.dataset.category = c;
+            li.appendChild(delBtn);
+            listEl.appendChild(li);
+        });
     }
 
     function renderCalendar() {
@@ -167,13 +188,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (d.getFullYear() === year && d.getMonth() === month) {
                 totalMonth += r.studyTimeMinutes || 0;
                 const day = d.getDay();
-                if (day === 0 || day === 6) {
-                    weekend += r.studyTimeMinutes || 0;
-                    weekendRecords.add(r.date);
-                } else {
-                    weekDay += r.studyTimeMinutes || 0;
-                    weekDayRecords.add(r.date);
-                }
+                if (day === 0 || day === 6) { weekend += r.studyTimeMinutes || 0; weekendRecords.add(r.date); }
+                else { weekDay += r.studyTimeMinutes || 0; weekDayRecords.add(r.date); }
                 const cat = r.category || 'その他';
                 if (!categoryData[cat]) categoryData[cat] = 0;
                 categoryData[cat] += r.studyTimeMinutes || 0;
@@ -246,10 +262,79 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Pomodoro Logic ---
+    function preparePomodoroView() {
+        updatePomodoroDisplay();
+        document.getElementById('pomodoro-status').textContent = pomoMode === 'work' ? '作業時間' : '休憩時間';
+    }
+    function updatePomodoroDisplay() {
+        const mins = Math.floor(pomoSecondsLeft / 60);
+        const secs = pomoSecondsLeft % 60;
+        document.getElementById('pomodoro-timer').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+    function startPausePomodoro() {
+        const btn = document.getElementById('pomodoro-start-pause');
+        if (pomoState === 'running') {
+            clearInterval(pomoInterval);
+            pomoState = 'paused';
+            btn.textContent = '再開';
+        } else {
+            pomoState = 'running';
+            btn.textContent = '一時停止';
+            pomoInterval = setInterval(pomoTick, 1000);
+        }
+    }
+    function resetPomodoro() {
+        clearInterval(pomoInterval);
+        pomoState = 'stopped';
+        pomoMode = 'work';
+        pomoSecondsLeft = POMO_DURATIONS.work;
+        updatePomodoroDisplay();
+        document.getElementById('pomodoro-status').textContent = '作業時間';
+        document.getElementById('pomodoro-start-pause').textContent = '開始';
+    }
+    function pomoTick() {
+        pomoSecondsLeft--;
+        updatePomodoroDisplay();
+        if (pomoSecondsLeft < 0) {
+            clearInterval(pomoInterval);
+            pomoState = 'stopped';
+            const completedMode = pomoMode;
+            if (completedMode === 'work') {
+                pomoSessions++;
+                autoSavePomodoroRecord();
+                pomoMode = (pomoSessions % 4 === 0) ? 'long_break' : 'short_break';
+                alert('作業セッションが完了しました。休憩を開始します。');
+            } else {
+                pomoMode = 'work';
+                alert('休憩が完了しました。作業を開始してください。');
+            }
+            pomoSecondsLeft = POMO_DURATIONS[pomoMode];
+            preparePomodoroView();
+        }
+    }
+    function autoSavePomodoroRecord() {
+        const today = new Date().toISOString().split('T')[0];
+        const records = getLearningRecords();
+        const existing = records.find(r => r.date === today && r.category === 'ポモドーロ');
+        if (existing) {
+            existing.studyTimeMinutes += 25;
+        } else {
+            records.push({ date: today, studyTimeMinutes: 25, category: 'ポモドーロ', memo: 'ポモドーロタイマーによる自動記録' });
+        }
+        saveLearningRecords(records);
+        if (!getStudyCategories().includes('ポモドーロ')) {
+            saveStudyCategories([...getStudyCategories(), 'ポモドーロ']);
+        }
+        showToast('save-toast', 'ポモドーロセッション(25分)を記録しました。');
+    }
+
+    // --- Event Listeners ---
     function setupEventListeners() {
         navItems.dashboard.addEventListener('click', (e) => { e.preventDefault(); navigateTo('dashboard'); });
-        document.getElementById('back-to-dashboard').addEventListener('click', (e) => { e.preventDefault(); navigateTo('dashboard'); });
         navItems.addRecord.addEventListener('click', (e) => { e.preventDefault(); navigateTo('record'); });
+        navItems.pomodoro.addEventListener('click', (e) => { e.preventDefault(); navigateTo('pomodoro'); });
+        document.getElementById('back-to-dashboard').addEventListener('click', (e) => { e.preventDefault(); navigateTo('dashboard'); });
         document.getElementById('prev-month-btn').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); updateDashboard(); });
         document.getElementById('next-month-btn').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); updateDashboard(); });
         document.getElementById('settingsModal').addEventListener('show.bs.modal', () => {
@@ -261,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const val = document.getElementById('monthly-goal-input').value;
             if (val && !isNaN(val) && val > 0) {
                 saveMonthlyGoal(Number(val));
-                showToast('goal-toast');
+                showToast('goal-toast', '目標を保存しました！');
                 bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
                 updateDashboard();
             } else alert('有効な目標時間を時間単位で入力してください。');
@@ -360,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (idx > -1) records[idx] = record;
             else records.push(record);
             saveLearningRecords(records);
-            showToast('save-toast');
+            showToast('save-toast', `${date} の記録を保存しました！`);
             setTimeout(() => navigateTo('dashboard'), 1000);
         });
         document.getElementById('add-break-time').addEventListener('click', () => addBreakTimeRow());
@@ -368,7 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (confirm('この日の記録を本当に削除しますか？')) {
                 const date = document.getElementById('record-date').value;
                 saveLearningRecords(getLearningRecords().filter(r => r.date !== date));
-                showToast('delete-toast');
+                showToast('delete-toast', `${date} の記録を削除しました。`);
                 setTimeout(() => navigateTo('dashboard'), 1000);
             }
         });
@@ -392,6 +477,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.target.closest('.break-time-group').remove();
             }
         });
+        document.getElementById('pomodoro-start-pause').addEventListener('click', startPausePomodoro);
+        document.getElementById('pomodoro-reset').addEventListener('click', resetPomodoro);
     }
 
     window.addEventListener('beforeinstallprompt', (e) => {

@@ -8,7 +8,9 @@ This project was created with the assistance of the Google Gemini CLI 🤖.
 - Time tracking (study and break time)
 - Calendar view of recorded time
 - Statistical summary (monthly total, daily averages)
-- Multiple design mockups for different aesthetics
+
+## Documentation
+- [Requirements Definition Document](PROJECT/docs/requirements.md)
 
 ## Mockups
 This project includes 10 different design mockups, each created with a different design philosophy. You can find them in the `Works/Mockups/` directory.

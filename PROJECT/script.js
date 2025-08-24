@@ -192,14 +192,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="input-group mb-1">
                             <span class="input-group-text">開始</span>
                             <input type="time" class="form-control break-start-time-input">
-                            <button class="btn btn-outline-secondary current-time-btn" type="button">記入</button>
+                            <button class="btn btn-outline-secondary current-time-btn" type="button">現在時刻を記入</button>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="input-group mb-2">
                             <span class="input-group-text">終了</span>
                             <input type="time" class="form-control break-end-time-input">
-                            <button class="btn btn-outline-secondary current-time-btn" type="button">記入</button>
+                            <button class="btn btn-outline-secondary current-time-btn" type="button">現在時刻を記入</button>
                             <button class="btn btn-outline-danger remove-break-time" type="button">削除</button>
                         </div>
                     </div>

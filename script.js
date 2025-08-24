@@ -5,25 +5,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let deferredPrompt;
     let currentDate = new Date();
     let weeklyChart = null;
-    let categoryChart = null; // New chart instance
+    let categoryChart = null;
     const toastInstances = {};
 
     function getLearningRecords() { return JSON.parse(localStorage.getItem('learningRecords') || '[]'); }
     function saveLearningRecords(records) { localStorage.setItem('learningRecords', JSON.stringify(records)); }
     function getMonthlyGoal() { return JSON.parse(localStorage.getItem('monthlyGoalHours')); }
     function saveMonthlyGoal(hours) { localStorage.setItem('monthlyGoalHours', JSON.stringify(hours)); }
-
     function getStudyCategories() {
         const categories = localStorage.getItem('studyCategories');
-        if (categories) {
-            return JSON.parse(categories);
-        }
+        if (categories) return JSON.parse(categories);
         const defaultCategories = ['プログラミング', '読書', 'その他'];
-        localStorage.setItem('studyCategories', JSON.stringify(defaultCategories));
+        saveStudyCategories(defaultCategories);
         return defaultCategories;
     }
     function saveStudyCategories(categories) { localStorage.setItem('studyCategories', JSON.stringify(categories)); }
-
     function timeToMinutes(timeStr) {
         if (!timeStr) return 0;
         const [hours, minutes] = timeStr.split(':').map(Number);
@@ -38,13 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function showToast(id) {
         if (!toastInstances[id]) {
             const toastEl = document.getElementById(id);
-            if (toastEl) {
-                toastInstances[id] = new bootstrap.Toast(toastEl);
-            }
+            if (toastEl) toastInstances[id] = new bootstrap.Toast(toastEl);
         }
-        if (toastInstances[id]) {
-            toastInstances[id].show();
-        }
+        if (toastInstances[id]) toastInstances[id].show();
     }
 
     // --- Views & Router ---
@@ -61,48 +53,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function navigateTo(viewName, context = {}) {
         Object.values(views).forEach(view => view.style.display = 'none');
         Object.values(navItems).forEach(item => item.classList.remove('active'));
-
         if (views[viewName]) {
             views[viewName].style.display = 'block';
-            if (navItems[viewName]) {
-                navItems[viewName].classList.add('active');
-            }
-            if(viewName === 'record') {
-                navItems.addRecord.classList.add('active');
-            }
+            if (navItems[viewName]) navItems[viewName].classList.add('active');
+            if(viewName === 'record') navItems.addRecord.classList.add('active');
         }
-
-        if (viewName === 'record') {
-            prepareRecordView(context.date);
-        } else if (viewName === 'dashboard') {
-            renderCalendar();
-            updateStatistics();
-        }
+        if (viewName === 'record') prepareRecordView(context.date);
+        else if (viewName === 'dashboard') updateDashboard();
         window.scrollTo(0, 0);
     }
 
-    // --- Category Management ---
-    function renderCategoryList() {
-        const categoryListEl = document.getElementById('category-list');
-        if (!categoryListEl) return;
-        const categories = getStudyCategories();
-        categoryListEl.innerHTML = '';
-        categories.forEach(category => {
-            const li = document.createElement('li');
-            li.className = 'list-group-item d-flex justify-content-between align-items-center';
-            li.textContent = category;
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'btn btn-outline-danger btn-sm delete-category-btn';
-            deleteBtn.textContent = '削除';
-            deleteBtn.dataset.category = category;
-            li.appendChild(deleteBtn);
-
-            categoryListEl.appendChild(li);
-        });
-    }
-
-    // --- View Preparation Logic ---
+    // --- View Preparation & Rendering ---
     function prepareRecordView(dateStr) {
         const targetDate = dateStr || new Date().toISOString().split('T')[0];
         document.getElementById('record-date').value = targetDate;
@@ -124,9 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('tweet-btn').style.display = 'none';
         document.getElementById('delete-btn').style.display = 'none';
 
-        const records = getLearningRecords();
-        const record = records.find(r => r.date === targetDate);
-
+        const record = getLearningRecords().find(r => r.date === targetDate);
         if (record) {
             document.getElementById('start-time').value = record.rawStartTime || '';
             document.getElementById('end-time').value = record.rawEndTime || '';
@@ -138,7 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 breakTimesContainer.innerHTML = '';
                 record.rawBreakTimes.forEach(bt => addBreakTimeRow(bt.start, bt.end));
             }
-
             if (record.studyTimeMinutes > 0) document.getElementById('tweet-btn').style.display = 'block';
             document.getElementById('delete-btn').style.display = 'block';
         }
@@ -152,301 +110,297 @@ document.addEventListener('DOMContentLoaded', () => {
         container.appendChild(newGroup);
     }
 
-    // --- Dashboard Logic ---
-    function renderCalendar() { /* ... */ }
-
-    function updateStatistics() {
+    function renderCalendar() {
+        const calendarGridEl = document.getElementById('calendar-grid');
+        const currentMonthEl = document.getElementById('current-month');
         const records = getLearningRecords();
-        const currentYear = currentDate.getFullYear();
-        const currentMonth = currentDate.getMonth();
-
-        const todayForDate = new Date();
-        document.getElementById('dashboard-date').textContent = `${todayForDate.getFullYear()}年${todayForDate.getMonth() + 1}月${todayForDate.getDate()}日`;
-
-        const todayStr = todayForDate.toISOString().split('T')[0];
-        const todayRecord = records.find(r => r.date === todayStr);
-        const todayStudyMinutes = todayRecord ? todayRecord.studyTimeMinutes : 0;
-        document.getElementById('today-summary-time').textContent = minutesToHHMM(todayStudyMinutes);
-
-        let totalMonthStudyMinutes = 0, weekdayStudyMinutes = 0, weekendStudyMinutes = 0;
-        const weekdayRecords = new Set(), weekendRecords = new Set();
-        const categoryData = {};
-
-        records.forEach(record => {
-            const recordDate = new Date(record.date);
-            if (recordDate.getFullYear() === currentYear && recordDate.getMonth() === currentMonth) {
-                const studyMinutes = record.studyTimeMinutes || 0;
-                totalMonthStudyMinutes += studyMinutes;
-
-                const dayOfWeek = recordDate.getDay();
-                if (dayOfWeek === 0 || dayOfWeek === 6) {
-                    weekendStudyMinutes += studyMinutes;
-                    weekendRecords.add(record.date);
-                } else {
-                    weekdayStudyMinutes += studyMinutes;
-                    weekdayRecords.add(record.date);
-                }
-
-                const category = record.category || 'その他';
-                if (!categoryData[category]) categoryData[category] = 0;
-                categoryData[category] += studyMinutes;
-            }
+        calendarGridEl.innerHTML = '';
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        if (currentMonthEl) currentMonthEl.textContent = `${year}年 ${month + 1}月`;
+        const firstDayOfMonth = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+        dayNames.forEach(day => {
+            const dayNameEl = document.createElement('div');
+            dayNameEl.className = 'day-name';
+            dayNameEl.textContent = day;
+            calendarGridEl.appendChild(dayNameEl);
         });
-
-        document.getElementById('total-month-time').textContent = minutesToHHMM(totalMonthStudyMinutes);
-        document.getElementById('weekday-avg-time').textContent = weekdayRecords.size > 0 ? minutesToHHMM(weekdayStudyMinutes / weekdayRecords.size) : '--:--';
-        document.getElementById('weekend-avg-time').textContent = weekendRecords.size > 0 ? minutesToHHMM(weekendStudyMinutes / weekendRecords.size) : '--:--';
-
-        renderWeeklyChart(records, currentYear, currentMonth);
-        renderCategoryChart(categoryData);
-        updateGoalProgress(totalMonthStudyMinutes);
+        for (let i = 0; i < firstDayOfMonth; i++) calendarGridEl.appendChild(document.createElement('div'));
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dayCell = document.createElement('div');
+            dayCell.className = 'day';
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            dayCell.dataset.date = dateStr;
+            const dayNumberEl = document.createElement('span');
+            dayNumberEl.textContent = day;
+            dayCell.appendChild(dayNumberEl);
+            const record = records.find(r => r.date === dateStr);
+            if (record && record.studyTimeMinutes > 0) {
+                const studyTimeEl = document.createElement('div');
+                studyTimeEl.className = 'study-time';
+                studyTimeEl.textContent = minutesToHHMM(record.studyTimeMinutes);
+                dayCell.appendChild(studyTimeEl);
+            }
+            const today = new Date();
+            if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
+                dayCell.classList.add('bg-primary', 'text-white');
+            }
+            dayCell.addEventListener('click', () => navigateTo('record', { date: dateStr }));
+            calendarGridEl.appendChild(dayCell);
+        }
     }
 
-    function updateGoalProgress(totalMonthStudyMinutes) { /* ... */ }
-    function renderWeeklyChart(records, year, month) { /* ... */ }
+    function updateDashboard() {
+        const records = getLearningRecords();
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const today = new Date();
+        document.getElementById('dashboard-date').textContent = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+        const todayRecord = records.find(r => r.date === today.toISOString().split('T')[0]);
+        document.getElementById('today-summary-time').textContent = minutesToHHMM(todayRecord ? todayRecord.studyTimeMinutes : 0);
+        let totalMonth = 0, weekDay = 0, weekend = 0;
+        const weekDayRecords = new Set(), weekendRecords = new Set(), categoryData = {};
+        records.forEach(r => {
+            const d = new Date(r.date);
+            if (d.getFullYear() === year && d.getMonth() === month) {
+                totalMonth += r.studyTimeMinutes || 0;
+                const day = d.getDay();
+                if (day === 0 || day === 6) {
+                    weekend += r.studyTimeMinutes || 0;
+                    weekendRecords.add(r.date);
+                } else {
+                    weekDay += r.studyTimeMinutes || 0;
+                    weekDayRecords.add(r.date);
+                }
+                const cat = r.category || 'その他';
+                if (!categoryData[cat]) categoryData[cat] = 0;
+                categoryData[cat] += r.studyTimeMinutes || 0;
+            }
+        });
+        document.getElementById('total-month-time').textContent = minutesToHHMM(totalMonth);
+        document.getElementById('weekday-avg-time').textContent = weekDayRecords.size > 0 ? minutesToHHMM(weekDay / weekDayRecords.size) : '--:--';
+        document.getElementById('weekend-avg-time').textContent = weekendRecords.size > 0 ? minutesToHHMM(weekend / weekendRecords.size) : '--:--';
+        renderWeeklyChart(records, year, month);
+        renderCategoryChart(categoryData);
+        updateGoalProgress(totalMonth);
+        renderCalendar();
+    }
 
-    function renderCategoryChart(categoryData) {
+    function updateGoalProgress(totalMonth) {
+        const goal = getMonthlyGoal();
+        const container = document.getElementById('goal-progress-container');
+        const bar = document.getElementById('goal-progress-bar');
+        if (goal && goal > 0) {
+            const percent = Math.min((totalMonth / (goal * 60)) * 100, 100);
+            container.innerHTML = `<strong>目標:</strong> ${goal}時間 / <strong>現在:</strong> ${minutesToHHMM(totalMonth)}`;
+            bar.style.width = `${percent.toFixed(2)}%`;
+            bar.textContent = `${percent.toFixed(1)}%`;
+            bar.setAttribute('aria-valuenow', percent);
+        } else {
+            container.innerHTML = `<p>目標が設定されていません。「設定」から目標時間を登録してください。</p>`;
+            bar.style.width = `0%`;
+            bar.textContent = `0%`;
+        }
+    }
+
+    function renderWeeklyChart(records, year, month) {
+        const ctx = document.getElementById('weekly-chart');
+        if (!ctx) return;
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const data = [0, 0, 0, 0, 0];
+        const labels = ["第1週", "第2週", "第3週", "第4週", "第5週"];
+        records.forEach(r => {
+            const d = new Date(r.date);
+            if (d.getFullYear() === year && d.getMonth() === month) {
+                const day = d.getDate();
+                const hours = (r.studyTimeMinutes || 0) / 60;
+                if (day <= 7) data[0] += hours;
+                else if (day <= 14) data[1] += hours;
+                else if (day <= 21) data[2] += hours;
+                else if (day <= 28) data[3] += hours;
+                else data[4] += hours;
+            }
+        });
+        if (daysInMonth < 29) { data.pop(); labels.pop(); }
+        if (weeklyChart) weeklyChart.destroy();
+        weeklyChart = new Chart(ctx, {
+            type: 'bar',
+            data: { labels, datasets: [{ label: '学習時間 (時間)', data: data.map(h => h.toFixed(2)), backgroundColor: 'rgba(74, 144, 226, 0.5)', borderColor: 'rgba(74, 144, 226, 1)', borderWidth: 1 }] },
+            options: { scales: { y: { beginAtZero: true, title: { display: true, text: '時間' } } }, responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    function renderCategoryChart(data) {
         const ctx = document.getElementById('category-chart');
         if (!ctx) return;
-
-        const labels = Object.keys(categoryData);
-        const data = Object.values(categoryData);
-
-        if (categoryChart) {
-            categoryChart.destroy();
-        }
-
+        if (categoryChart) categoryChart.destroy();
         categoryChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: labels,
-                datasets: [{
-                    label: '学習時間 (分)',
-                    data: data,
-                    backgroundColor: [
-                        'rgba(74, 144, 226, 0.7)',
-                        'rgba(245, 166, 35, 0.7)',
-                        'rgba(126, 211, 33, 0.7)',
-                        'rgba(248, 231, 28, 0.7)',
-                        'rgba(189, 16, 224, 0.7)',
-                        'rgba(80, 227, 194, 0.7)'
-                    ],
-                }]
+                labels: Object.keys(data),
+                datasets: [{ label: '学習時間 (分)', data: Object.values(data), backgroundColor: ['rgba(74, 144, 226, 0.7)', 'rgba(245, 166, 35, 0.7)', 'rgba(126, 211, 33, 0.7)', 'rgba(248, 231, 28, 0.7)', 'rgba(189, 16, 224, 0.7)', 'rgba(80, 227, 194, 0.7)'] }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                    }
-                }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
         });
     }
 
-    // --- Global Event Listeners ---
     function setupEventListeners() {
-        // Navigation
         navItems.dashboard.addEventListener('click', (e) => { e.preventDefault(); navigateTo('dashboard'); });
         document.getElementById('back-to-dashboard').addEventListener('click', (e) => { e.preventDefault(); navigateTo('dashboard'); });
-        navItems.addRecord.addEventListener('click', (e) => { e.preventDefault(); navigateTo('record', { date: new Date().toISOString().split('T')[0] }); });
-
-        // Dashboard
-        document.getElementById('prev-month-btn').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); updateStatistics(); });
-        document.getElementById('next-month-btn').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); updateStatistics(); });
-
-        // Settings Modal
+        navItems.addRecord.addEventListener('click', (e) => { e.preventDefault(); navigateTo('record'); });
+        document.getElementById('prev-month-btn').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); updateDashboard(); });
+        document.getElementById('next-month-btn').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); updateDashboard(); });
         document.getElementById('settingsModal').addEventListener('show.bs.modal', () => {
-            const currentGoal = getMonthlyGoal();
-            if (currentGoal) document.getElementById('monthly-goal-input').value = currentGoal;
+            const goal = getMonthlyGoal();
+            if (goal) document.getElementById('monthly-goal-input').value = goal;
             renderCategoryList();
         });
         document.getElementById('save-goal-btn').addEventListener('click', () => {
-            const goalValue = document.getElementById('monthly-goal-input').value;
-            if (goalValue && !isNaN(goalValue) && goalValue > 0) {
-                saveMonthlyGoal(Number(goalValue));
+            const val = document.getElementById('monthly-goal-input').value;
+            if (val && !isNaN(val) && val > 0) {
+                saveMonthlyGoal(Number(val));
                 showToast('goal-toast');
                 bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
-                updateStatistics();
-            } else {
-                alert('有効な目標時間を時間単位で入力してください。');
-            }
+                updateDashboard();
+            } else alert('有効な目標時間を時間単位で入力してください。');
         });
-
-        // Data Management
         document.getElementById('backup-button').addEventListener('click', () => {
-            const records = getLearningRecords();
-            const dataToExport = {
-                records: records,
-                categories: getStudyCategories(),
-                goal: getMonthlyGoal()
-            };
-            const jsonString = JSON.stringify(dataToExport, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
+            const data = { records: getLearningRecords(), categories: getStudyCategories(), goal: getMonthlyGoal() };
+            const str = JSON.stringify(data, null, 2);
+            const blob = new Blob([str], { type: 'application/json' });
             const a = document.createElement('a');
-            a.href = url;
+            a.href = URL.createObjectURL(blob);
             a.download = `learning_records_backup_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            alert('バックアップファイルをダウンロードしました！');
+            URL.revokeObjectURL(a.href);
         });
-
-        const importFileInput = document.getElementById('import-file-input');
-        document.getElementById('import-button').addEventListener('click', () => {
-            importFileInput.click();
-        });
-
-        importFileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
+        const importInput = document.getElementById('import-file-input');
+        document.getElementById('import-button').addEventListener('click', () => importInput.click());
+        importInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = (re) => {
                 try {
-                    const importedData = JSON.parse(e.target.result);
-                    if (typeof importedData !== 'object' || importedData === null) {
-                        throw new Error('無効なJSONファイルです。');
-                    }
-
-                    if (confirm('現在のすべての記録と設定をインポートしたデータで上書きします。よろしいですか？')) {
-                        if (Array.isArray(importedData.records)) {
-                             saveLearningRecords(importedData.records);
-                        }
-                        if (Array.isArray(importedData.categories)) {
-                            saveStudyCategories(importedData.categories);
-                        }
-                        if (importedData.goal) {
-                            saveMonthlyGoal(importedData.goal);
-                        }
+                    const data = JSON.parse(re.target.result);
+                    if (confirm('現在の記録と設定を上書きします。よろしいですか？')) {
+                        if (data.records) saveLearningRecords(data.records);
+                        if (data.categories) saveStudyCategories(data.categories);
+                        if (data.goal) saveMonthlyGoal(data.goal);
                         alert('データをインポートしました！');
                         bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
                         navigateTo('dashboard');
                     }
-                } catch (error) {
-                    alert(`インポートに失敗しました: ${error.message}`);
-                } finally {
-                    importFileInput.value = '';
-                }
+                } catch (err) { alert(`インポート失敗: ${err.message}`); }
+                finally { importInput.value = ''; }
             };
             reader.readAsText(file);
         });
-
-        // Category Management
         document.getElementById('add-category-btn').addEventListener('click', () => {
             const input = document.getElementById('new-category-input');
-            const newCategory = input.value.trim();
-            if (newCategory) {
-                const categories = getStudyCategories();
-                if (!categories.includes(newCategory)) {
-                    categories.push(newCategory);
-                    saveStudyCategories(categories);
+            const cat = input.value.trim();
+            if (cat) {
+                const cats = getStudyCategories();
+                if (!cats.includes(cat)) {
+                    cats.push(cat);
+                    saveStudyCategories(cats);
                     renderCategoryList();
                     input.value = '';
-                } else {
-                    alert('同じ名前のカテゴリが既に存在します。');
-                }
+                } else alert('同じ名前のカテゴリが既に存在します。');
             }
         });
-        document.getElementById('category-list').addEventListener('click', (event) => {
-            if (event.target.classList.contains('delete-category-btn')) {
-                const categoryToDelete = event.target.dataset.category;
-                if (confirm(`「${categoryToDelete}」を削除しますか？このカテゴリの学習記録は「その他」に分類されます。`)) {
-                    let categories = getStudyCategories();
-                    categories = categories.filter(c => c !== categoryToDelete);
-                    saveStudyCategories(categories);
-
-                    let records = getLearningRecords();
-                    records.forEach(record => {
-                        if (record.category === categoryToDelete) {
-                            record.category = 'その他';
-                        }
-                    });
-                    saveLearningRecords(records);
-
+        document.getElementById('category-list').addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-category-btn')) {
+                const cat = e.target.dataset.category;
+                if (confirm(`「${cat}」を削除しますか？関連する記録は「その他」に分類されます。`)) {
+                    saveStudyCategories(getStudyCategories().filter(c => c !== cat));
+                    saveLearningRecords(getLearningRecords().map(r => {
+                        if (r.category === cat) r.category = 'その他';
+                        return r;
+                    }));
                     renderCategoryList();
-                    updateStatistics(); // Refresh dashboard chart
+                    updateDashboard();
                 }
             }
         });
-
-        // Record Form
-        document.getElementById('record-form').addEventListener('submit', (event) => {
-            event.preventDefault();
+        document.getElementById('record-form').addEventListener('submit', (e) => {
+            e.preventDefault();
             const date = document.getElementById('record-date').value;
-            if (!date) { alert('日付を入力してください。'); return; }
-            const studyStartMinutes = timeToMinutes(document.getElementById('start-time').value);
-            const studyEndMinutes = timeToMinutes(document.getElementById('end-time').value);
-            if (studyEndMinutes <= studyStartMinutes) { alert('勉強の終了時間は開始時間より後に設定してください。'); return; }
-
-            let totalBreakMinutes = 0;
-            let breakTimesValid = true;
-            const rawBreakTimes = [];
-            document.querySelectorAll('#view-record .break-time-group').forEach(group => {
-                const startInput = group.querySelector('.break-start-time-input').value;
-                const endInput = group.querySelector('.break-end-time-input').value;
-                if (startInput && endInput) {
-                    const breakStartMinutes = timeToMinutes(startInput);
-                    const breakEndMinutes = timeToMinutes(endInput);
-                    if (breakEndMinutes <= breakStartMinutes) { alert('休憩の終了時間は開始時間より後に設定してください。'); breakTimesValid = false; }
-                    totalBreakMinutes += (breakEndMinutes - breakStartMinutes);
-                    rawBreakTimes.push({ start: startInput, end: endInput });
+            const start = timeToMinutes(document.getElementById('start-time').value);
+            const end = timeToMinutes(document.getElementById('end-time').value);
+            if (end <= start) { alert('終了時間は開始時間より後に設定してください。'); return; }
+            let breakMins = 0;
+            let breaksValid = true;
+            const rawBreaks = [];
+            document.querySelectorAll('#view-record .break-time-group').forEach(g => {
+                const s = g.querySelector('.break-start-time-input').value;
+                const e = g.querySelector('.break-end-time-input').value;
+                if (s && e) {
+                    const bStart = timeToMinutes(s), bEnd = timeToMinutes(e);
+                    if (bEnd <= bStart) { breaksValid = false; }
+                    breakMins += (bEnd - bStart);
+                    rawBreaks.push({ start: s, end: e });
                 }
             });
-            if (!breakTimesValid) return;
-
-            const netStudyMinutes = (studyEndMinutes - studyStartMinutes) - totalBreakMinutes;
+            if (!breaksValid) { alert('休憩の終了時間は開始時間より後に設定してください。'); return; }
             const record = {
-                date: date,
-                studyTimeMinutes: netStudyMinutes,
-                breakTimeMinutes: totalBreakMinutes,
+                date,
+                studyTimeMinutes: (end - start) - breakMins,
+                breakTimeMinutes: breakMins,
                 rawStartTime: document.getElementById('start-time').value,
                 rawEndTime: document.getElementById('end-time').value,
-                rawBreakTimes: rawBreakTimes,
+                rawBreakTimes: rawBreaks,
                 memo: document.getElementById('memo-input').value,
                 category: document.getElementById('record-category').value
             };
-
-            let records = getLearningRecords();
-            const existingRecordIndex = records.findIndex(r => r.date === date);
-            if (existingRecordIndex > -1) records[existingRecordIndex] = record;
+            const records = getLearningRecords();
+            const idx = records.findIndex(r => r.date === date);
+            if (idx > -1) records[idx] = record;
             else records.push(record);
             saveLearningRecords(records);
             showToast('save-toast');
             setTimeout(() => navigateTo('dashboard'), 1000);
         });
-
         document.getElementById('add-break-time').addEventListener('click', () => addBreakTimeRow());
-        document.getElementById('delete-btn').addEventListener('click', () => { /* ... */ });
-        document.getElementById('tweet-btn').addEventListener('click', () => { /* ... */ });
-
-        // Global Event Delegation
-        document.body.addEventListener('click', (event) => {
-            if (event.target.classList.contains('current-time-btn')) {
-                const inputElement = event.target.closest('.input-group').querySelector('input[type="time"]');
-                if (inputElement) {
+        document.getElementById('delete-btn').addEventListener('click', () => {
+            if (confirm('この日の記録を本当に削除しますか？')) {
+                const date = document.getElementById('record-date').value;
+                saveLearningRecords(getLearningRecords().filter(r => r.date !== date));
+                showToast('delete-toast');
+                setTimeout(() => navigateTo('dashboard'), 1000);
+            }
+        });
+        document.getElementById('tweet-btn').addEventListener('click', () => {
+            const date = document.getElementById('record-date').value;
+            const record = getLearningRecords().find(r => r.date === date);
+            if (record) {
+                const text = `今日の勉強時間は ${minutesToHHMM(record.studyTimeMinutes)} でした！📝 #学習記録`;
+                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+            }
+        });
+        document.body.addEventListener('click', (e) => {
+            if (e.target.classList.contains('current-time-btn')) {
+                const input = e.target.closest('.input-group').querySelector('input[type="time"]');
+                if (input) {
                     const now = new Date();
-                    inputElement.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                    input.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
                 }
             }
-            if (event.target.classList.contains('remove-break-time')) {
-                event.target.closest('.break-time-group').remove();
+            if (e.target.classList.contains('remove-break-time')) {
+                e.target.closest('.break-time-group').remove();
             }
         });
     }
 
-    // PWA Installation
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        const installButton = document.getElementById('install-pwa-button');
-        if (installButton) installButton.style.display = 'block';
+        const btn = document.getElementById('install-pwa-button');
+        if (btn) btn.style.display = 'block';
     });
 
-    // App Initialization
     setupEventListeners();
     navigateTo('dashboard');
 });

@@ -1,0 +1,23 @@
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+.day-name {
+    font-weight: bold;
+    padding: 8px 0;
+}
+.day-cell {
+    padding: 8px 0;
+    border-radius: 50%; /* Material design often uses circles */
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.day-cell:hover {
+    background-color: #f5f5f5; /* A light grey for hover */
+}

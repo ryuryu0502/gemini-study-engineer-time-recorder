@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学習記録アプリ (Bootstrap)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">学習カレンダー</a>
+            <button class="btn btn-outline-light" type="button" data-bs-toggle="modal" data-bs-target="#settingsModal">
+                設定 ⚙️
+            </button>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <button id="prev-month-btn" class="btn btn-outline-primary">&lt;</button>
+                    <h2 id="current-month" class="mb-0"></h2>
+                    <button id="next-month-btn" class="btn btn-outline-primary">&gt;</button>
+                </div>
+                <div id="calendar-grid" class="mt-3"></div>
+            </div>
+        </div>
+
+        <div class="row text-center mt-4">
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">今月の合計</h5>
+                        <p id="total-month-time" class="card-text fs-4">--:--</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">平日平均</h5>
+                        <p id="weekday-avg-time" class="card-text fs-4">--:--</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">休日平均</h5>
+                        <p id="weekend-avg-time" class="card-text fs-4">--:--</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary btn-lg rounded-circle position-fixed" style="right: 30px; bottom: 30px; width: 60px; height: 60px;">+</button>
+
+    <!-- Settings Modal -->
+    <div class="modal fade" id="settingsModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">設定</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p>ここに設定項目が入ります。</p>
+            <button class="btn btn-secondary">バックアップを作成</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

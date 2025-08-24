@@ -1,0 +1,102 @@
+body {
+    font-family: 'Courier New', Courier, monospace;
+    margin: 0;
+    padding: 0;
+    background-color: #fff;
+    color: #000;
+}
+
+#app {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 2px solid #000;
+}
+
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #000;
+}
+
+.app-header h1 {
+    font-size: 1.5em;
+    margin: 0;
+}
+
+button {
+    background-color: #fff;
+    border: 2px solid #000;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    cursor: pointer;
+}
+button:active {
+    background-color: #000;
+    color: #fff;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    border-left: 2px solid #000;
+    border-top: 2px solid #000;
+}
+
+.calendar-grid div {
+    padding: 10px;
+    border-right: 2px solid #000;
+    border-bottom: 2px solid #000;
+}
+
+.day-name {
+    font-weight: bold;
+    background-color: #ddd;
+}
+
+.day-cell:hover {
+    background-color: #ffff00; /* A harsh yellow for hover */
+    cursor: pointer;
+}
+
+.stats-container {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #000;
+}
+
+.stat-item {
+    text-align: center;
+}
+.stat-item p:last-child {
+    font-size: 1.5em;
+}
+
+.fab {
+    position: fixed;
+    right: 30px;
+    bottom: 30px;
+    width: 60px;
+    height: 60px;
+    background-color: #fff;
+    color: #000;
+    font-size: 2em;
+    border: 2px solid #000;
+    cursor: pointer;
+}
+.fab:active {
+    background-color: #000;
+    color: #fff;
+}

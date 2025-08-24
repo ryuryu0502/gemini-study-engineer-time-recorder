@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学習記録アプリ (Minimalist)</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="container">
+        <nav>
+            <ul>
+                <li><strong>学習カレンダー</strong></li>
+            </ul>
+            <ul>
+                <li><a href="#" role="button" class="secondary outline">設定</a></li>
+            </ul>
+        </nav>
+
+        <article>
+            <header class="calendar-header">
+                <button id="prev-month-btn" class="outline">&lt;</button>
+                <h2 id="current-month"></h2>
+                <button id="next-month-btn" class="outline">&gt;</button>
+            </header>
+            <div id="calendar-grid"></div>
+        </article>
+
+        <div class="grid">
+            <div class="stat-item">
+                <p><small>今月の合計</small></p>
+                <h3 id="total-month-time">--:--</h3>
+            </div>
+            <div class="stat-item">
+                <p><small>平日平均</small></p>
+                <h3 id="weekday-avg-time">--:--</h3>
+            </div>
+            <div class="stat-item">
+                <p><small>休日平均</small></p>
+                <h3 id="weekend-avg-time">--:--</h3>
+            </div>
+        </div>
+
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>

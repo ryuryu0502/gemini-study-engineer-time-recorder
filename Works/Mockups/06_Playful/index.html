@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学習記録アプリ (Playful)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <header class="app-header">
+            <h1>学習カレンダー 🐾</h1>
+            <button id="settings-btn" class="icon-btn">⚙️</button>
+        </header>
+
+        <main id="calendar-view">
+            <div class="calendar-header">
+                <button id="prev-month-btn">◀</button>
+                <h2 id="current-month"></h2>
+                <button id="next-month-btn">▶</button>
+            </div>
+            <div id="calendar-grid" class="calendar-grid"></div>
+            <div class="stats-container">
+                <div class="stat-item">
+                    <p>今月の合計</p>
+                    <p id="total-month-time">--:--</p>
+                </div>
+                <div class="stat-item">
+                    <p>平日平均</p>
+                    <p id="weekday-avg-time">--:--</p>
+                </div>
+                <div class="stat-item">
+                    <p>休日平均</p>
+                    <p id="weekend-avg-time">--:--</p>
+                </div>
+            </div>
+        </main>
+
+        <button id="add-record-fab" class="fab">+</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

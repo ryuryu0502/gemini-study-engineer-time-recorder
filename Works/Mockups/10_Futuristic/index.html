@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学習記録アプリ (Futuristic)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-shapes"></div>
+    <div id="app">
+        <header class="app-header">
+            <h1>学習カレンダー</h1>
+            <button id="settings-btn">⚙️</button>
+        </header>
+
+        <main id="calendar-view">
+            <div class="calendar-header">
+                <button id="prev-month-btn">&lt;</button>
+                <h2 id="current-month"></h2>
+                <button id="next-month-btn">&gt;</button>
+            </div>
+            <div id="calendar-grid" class="calendar-grid"></div>
+        </main>
+
+        <footer class="stats-container">
+            <div class="stat-item">
+                <p>TOTAL</p>
+                <p id="total-month-time">--:--</p>
+            </div>
+            <div class="stat-item">
+                <p>WEEKDAY AVG</p>
+                <p id="weekday-avg-time">--:--</p>
+            </div>
+            <div class="stat-item">
+                <p>WEEKEND AVG</p>
+                <p id="weekend-avg-time">--:--</p>
+            </div>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

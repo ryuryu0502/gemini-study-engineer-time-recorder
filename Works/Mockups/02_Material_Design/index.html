@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学習記録アプリ (Material Design)</title>
+    <!-- Materialize CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-wrapper">
+            <a href="#" class="brand-logo">学習カレンダー</a>
+            <ul class="right">
+                <li><a href="#settings-modal" class="modal-trigger"><i class="material-icons">settings</i></a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-content">
+                <div class="calendar-header">
+                    <a id="prev-month-btn" class="waves-effect waves-light btn-flat"><i class="material-icons">chevron_left</i></a>
+                    <h4 id="current-month" class="center-align"></h4>
+                    <a id="next-month-btn" class="waves-effect waves-light btn-flat"><i class="material-icons">chevron_right</i></a>
+                </div>
+                <div id="calendar-grid" class="center-align"></div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col s4">
+                <div class="card-panel center-align">
+                    <h6>今月の合計</h6>
+                    <p id="total-month-time" class="flow-text">--:--</p>
+                </div>
+            </div>
+            <div class="col s4">
+                <div class="card-panel center-align">
+                    <h6>平日平均</h6>
+                    <p id="weekday-avg-time" class="flow-text">--:--</p>
+                </div>
+            </div>
+            <div class="col s4">
+                <div class="card-panel center-align">
+                    <h6>休日平均</h6>
+                    <p id="weekend-avg-time" class="flow-text">--:--</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="fixed-action-btn">
+        <a class="btn-floating btn-large red">
+            <i class="large material-icons">add</i>
+        </a>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <h4>設定</h4>
+            <p>ここに設定項目が入ります。</p>
+            <a href="#!" class="btn">バックアップを作成</a>
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class="modal-close waves-effect waves-green btn-flat">閉じる</a>
+        </div>
+    </div>
+
+    <!-- Materialize JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

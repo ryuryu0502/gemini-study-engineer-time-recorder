@@ -109,3 +109,14 @@ body {
 #weekly-chart {
     max-height: 300px;
 }
+
+/* --- Study time in calendar cell --- */
+.study-time {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 4px;
+}
+
+.day.bg-primary .study-time {
+    color: #fff;
+}

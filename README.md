@@ -1,16 +1,60 @@
-# Gemini Study Engineer Time Recorder
+# 学習記録アプリ
 
-A simple web application to track study time for engineers.
+## 概要
 
-This project was created with the assistance of the Google Gemini CLI 🤖.
+このアプリケーションは、エンジニアの学習時間および休憩時間を記録し、可視化することで、学習の進捗管理とモチベーション維持を支援するWebアプリケーションです。
 
-## Features
-- Time tracking (study and break time)
-- Calendar view of recorded time
-- Statistical summary (monthly total, daily averages)
+## 機能
 
-## Documentation
-- [Requirements Definition Document](PROJECT/docs/requirements.md)
+- **記録機能**:
+    - 学習を行った日付、勉強時間、休憩時間を記録できます。
+    - 休憩時間は複数回記録可能です。
+- **カレンダー機能 (ホーム画面)**:
+    - 月単位で学習記録をカレンダー形式で表示します。
+    - 月の移動、特定の日付の選択（記録画面への遷移）が可能です。
+    - 今月の合計勉強時間、平日平均勉強時間、休日平均勉強時間を表示します。
+- **設定機能**:
+    - 記録されたデータをJSON形式でバックアップ（エクスポート）できます。
 
-## Mockups
-This project includes 10 different design mockups, each created with a different design philosophy. You can find them in the `Works/Mockups/` directory.
+## 技術スタック
+
+- フロントエンド: HTML, CSS, JavaScript
+- UIフレームワーク: Bootstrap 5.3.3
+
+## セットアップ方法
+
+1.  このリポジトリをクローンします。
+    ```bash
+    git clone <リポジトリのURL>
+    ```
+2.  クローンしたディレクトリに移動します。
+    ```bash
+    cd PROJECT
+    ```
+3.  `index.html` ファイルをウェブブラウザで開きます。
+    （例: ファイルエクスプローラーで `index.html` をダブルクリックするか、VS CodeのLive Server拡張機能などを使用します。）
+
+## 使用方法
+
+1.  **ホーム画面 (カレンダー)**:
+    - アプリケーションを開くと、現在の月のカレンダーが表示されます。
+    - カレンダーの左右の矢印ボタンで月を移動できます。
+    - カレンダー上の日付をクリックすると、その日の記録画面に移動します。
+    - 右下の「+」ボタンをクリックすると、今日の日付で記録画面に移動します。
+    - 画面上部には、今月の合計勉強時間、平日平均、休日平均が表示されます。
+
+2.  **記録画面**:
+    - 日付が自動的に入力されますが、変更することも可能です。
+    - 「開始時間」と「終了時間」を入力して、学習時間を記録します。
+    - 「休憩を追加」ボタンで休憩時間を複数追加できます。各休憩の「開始」と「終了」時間を入力します。
+    - 「現在時刻を記入」ボタンで、入力フィールドに現在の時刻を自動入力できます。
+    - 入力後、「保存」ボタンをクリックすると記録が保存され、カレンダー画面に戻ります。
+
+3.  **設定画面**:
+    - ホーム画面のナビゲーションバーにある「設定 ⚙️」ボタンをクリックすると、設定モーダルが開きます。
+    - 「バックアップを作成」ボタンをクリックすると、これまでの学習記録がJSONファイルとしてダウンロードされます。
+
+## 開発者向け情報
+
+- データはブラウザの `localStorage` に保存されます。キーは `learningRecords` です。
+- 時間計算は分単位で行われ、表示時に `HH:MM` 形式に変換されます。

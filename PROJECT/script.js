@@ -37,6 +37,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 dayCell.classList.add('day');
                 dayCell.textContent = day;
                 dayCell.dataset.date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; // Add data-date attribute
+
+                // Highlight current day
+                const today = new Date();
+                if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
+                    dayCell.classList.add('bg-primary', 'text-white'); // Bootstrap classes for highlighting
+                }
+
                 dayCell.addEventListener('click', () => {
                     window.location.href = `record.html?date=${dayCell.dataset.date}`;
                 });
@@ -55,16 +62,68 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         renderCalendar();
+            updateStatistics();
 
-        // Handle FAB click
-        const addRecordFab = document.getElementById('add-record-fab');
-        if (addRecordFab) {
-            addRecordFab.addEventListener('click', () => {
-                const today = new Date();
-                const year = today.getFullYear();
-                const month = String(today.getMonth() + 1).padStart(2, '0');
-                const day = String(today.getDate()).padStart(2, '0');
-                window.location.href = `record.html?date=${year}-${month}-${day}`;
+            // Handle FAB click
+            const addRecordFab = document.getElementById('add-record-fab');
+            if (addRecordFab) {
+                addRecordFab.addEventListener('click', () => {
+                    const today = new Date();
+                    const year = today.getFullYear();
+                    const month = String(today.getMonth() + 1).padStart(2, '0');
+                    const day = String(today.getDate()).padStart(2, '0');
+                    window.location.href = `record.html?date=${year}-${month}-${day}`;
+                });
+            }
+
+            function updateStatistics() {
+                const records = getLearningRecords();
+                const currentYear = currentDate.getFullYear();
+                const currentMonth = currentDate.getMonth();
+
+                let totalMonthStudyMinutes = 0;
+                let weekdayStudyMinutes = 0;
+                let weekdayCount = 0;
+                let weekendStudyMinutes = 0;
+                let weekendCount = 0;
+
+                records.forEach(record => {
+                    const recordDate = new Date(record.date);
+                    if (recordDate.getFullYear() === currentYear && recordDate.getMonth() === currentMonth) {
+                        totalMonthStudyMinutes += record.studyTimeMinutes;
+
+                        const dayOfWeek = recordDate.getDay(); // 0 for Sunday, 6 for Saturday
+                        if (dayOfWeek === 0 || dayOfWeek === 6) { // Weekend
+                            weekendStudyMinutes += record.studyTimeMinutes;
+                            weekendCount++;
+                        } else { // Weekday
+                            weekdayStudyMinutes += record.studyTimeMinutes;
+                            weekdayCount++;
+                        }
+                    }
+                });
+
+                document.getElementById('total-month-time').textContent = minutesToHHMM(totalMonthStudyMinutes);
+                document.getElementById('weekday-avg-time').textContent = weekdayCount > 0 ? minutesToHHMM(weekdayStudyMinutes / weekdayCount) : '--:--';
+                document.getElementById('weekend-avg-time').textContent = weekendCount > 0 ? minutesToHHMM(weekendStudyMinutes / weekendCount) : '--:--';
+            }
+        // Handle backup button click
+        const backupButton = document.getElementById('backup-button');
+        if (backupButton) {
+            backupButton.addEventListener('click', () => {
+                const records = getLearningRecords(); // Reusing the function defined earlier
+                const jsonString = JSON.stringify(records, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'learning_records_backup.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                alert('バックアップファイルをダウンロードしました！');
             });
         }
     }
@@ -144,20 +203,122 @@ document.addEventListener('DOMContentLoaded', () => {
             const startTime = startTimeInput.value;
             const endTime = endTimeInput.value;
 
+            // Basic validation: Ensure end time is after start time for study session
+            const startMinutes = timeToMinutes(startTime);
+            const endMinutes = timeToMinutes(endTime);
+
+            if (endMinutes <= startMinutes) {
+                alert('終了時間は開始時間より後に設定してください。');
+                return; // Prevent form submission
+            }
+
             const breakTimes = [];
+            let isValid = true; // Flag for break time validation
             document.querySelectorAll('.mb-3.border.p-2.rounded').forEach(group => { // Target the new group div
                 const startInput = group.querySelector('.break-start-time-input');
                 const endInput = group.querySelector('.break-end-time-input');
                 if (startInput && endInput) {
+                    const breakStartMinutes = timeToMinutes(startInput.value);
+                    const breakEndMinutes = timeToMinutes(endInput.value);
+
+                    if (breakEndMinutes <= breakStartMinutes) {
+                        alert('休憩終了時間は休憩開始時間より後に設定してください。');
+                        isValid = false; // Set a flag to prevent form submission
+                        return; // Exit forEach loop
+                    }
                     breakTimes.push({ start: startInput.value, end: endInput.value });
                 }
             });
 
-            console.log('記録データ:', { date, startTime, endTime, breakTimes });
-            alert('記録を保存しました！（実際にはまだ保存されません）'); // Placeholder for saving
+            if (!isValid) { // Check the flag after the loop
+                return; // Prevent form submission if any break time is invalid
+            }
 
-            // Optionally redirect back to calendar or clear form
-            // window.location.href = 'index.html';
+            // Helper to convert HH:MM to minutes
+            function timeToMinutes(timeStr) {
+                const [hours, minutes] = timeStr.split(':').map(Number);
+                return hours * 60 + minutes;
+            }
+
+            // Calculate total study time for the day
+            const studyStartMinutes = timeToMinutes(startTime);
+            const studyEndMinutes = timeToMinutes(endTime);
+            let totalStudyMinutes = studyEndMinutes - studyStartMinutes;
+            if (totalStudyMinutes < 0) { // Handle overnight sessions (simple case)
+                totalStudyMinutes += 24 * 60;
+            }
+
+            // Calculate total break time for the day
+            let totalBreakMinutes = 0;
+            breakTimes.forEach(bt => {
+                const breakStart = timeToMinutes(bt.start);
+                const breakEnd = timeToMinutes(bt.end);
+                let currentBreak = breakEnd - breakStart;
+                if (currentBreak < 0) { // Handle overnight breaks
+                    currentBreak += 24 * 60;
+                }
+                totalBreakMinutes += currentBreak;
+            });
+
+            // Actual net study time
+            const netStudyMinutes = totalStudyMinutes - totalBreakMinutes;
+
+            const record = {
+                date: date,
+                studyTimeMinutes: netStudyMinutes,
+                breakTimeMinutes: totalBreakMinutes,
+                rawStartTime: startTime,
+                rawEndTime: endTime,
+                rawBreakTimes: breakTimes // Keep raw times for backup/display if needed
+            };
+
+            // Load existing records, add new one, and save
+            let records = JSON.parse(localStorage.getItem('learningRecords') || '[]');
+            // Check if a record for this date already exists and update it
+            const existingRecordIndex = records.findIndex(r => r.date === date);
+            if (existingRecordIndex > -1) {
+                records[existingRecordIndex] = record;
+            } else {
+                records.push(record);
+            }
+            localStorage.setItem('learningRecords', JSON.stringify(records));
+
+            alert('記録を保存しました！');
+            window.location.href = 'index.html'; // Redirect back to calendar
         });
+
+        // Helper to convert minutes to HH:MM
+        function minutesToHHMM(totalMinutes) {
+            if (totalMinutes < 0) totalMinutes = 0; // Ensure non-negative
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        // Function to get all records from localStorage
+        function getLearningRecords() {
+            return JSON.parse(localStorage.getItem('learningRecords') || '[]');
+        }
+
+        // Function to save all records to localStorage
+        function saveLearningRecords(records) {
+            localStorage.setItem('learningRecords', JSON.stringify(records));
+        }
+
+    }
+});
+
+// Global helper functions (can be moved if preferred)
+function timeToMinutes(timeStr) {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+}
+
+function minutesToHHMM(totalMinutes) {
+    if (totalMinutes < 0) totalMinutes = 0; // Ensure non-negative
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
     }
 });

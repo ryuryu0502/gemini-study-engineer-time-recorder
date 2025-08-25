@@ -89,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('start-time').value = context.startTime || '';
         document.getElementById('end-time').value = context.endTime || '';
         document.getElementById('memo-input').value = '';
+        document.getElementById('tags-input').value = '';
         document.getElementById('break-times-container').innerHTML = `<div class="mb-3 border p-2 rounded break-time-group"><div class="row"><div class="col-md-6"><div class="input-group mb-1"><span class="input-group-text">開始</span><input type="time" class="form-control break-start-time-input"><button class="btn btn-outline-secondary current-time-btn" type="button">記入</button></div></div><div class="col-md-6"><div class="input-group mb-2"><span class="input-group-text">終了</span><input type="time" class="form-control break-end-time-input"><button class="btn btn-outline-secondary current-time-btn" type="button">記入</button><button class="btn btn-outline-danger remove-break-time" type="button">削除</button></div></div></div></div>`;
         document.getElementById('tweet-btn').style.display = 'none';
         document.getElementById('delete-btn').style.display = 'none';
@@ -98,6 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('end-time').value = record.rawEndTime || '';
             document.getElementById('memo-input').value = record.memo || '';
             categorySelect.value = record.category || 'その他';
+            if (record.tags && Array.isArray(record.tags)) {
+                document.getElementById('tags-input').value = record.tags.join(', ');
+            }
             const breakContainer = document.getElementById('break-times-container');
             if (record.rawBreakTimes && record.rawBreakTimes.length > 0) {
                 breakContainer.innerHTML = '';
@@ -136,11 +140,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentMonthEl = document.getElementById('current-month');
         const records = getLearningRecords();
         calendarGridEl.innerHTML = '';
+
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         if (currentMonthEl) currentMonthEl.textContent = `${year}年 ${month + 1}月`;
+
         const firstDayOfMonth = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        // More robust way to get a "clean" date at midnight to avoid timezone issues
+        const today = new Date(new Date().setHours(0, 0, 0, 0));
+        const todayYear = today.getFullYear();
+        const todayMonth = today.getMonth();
+        const todayDate = today.getDate();
+
         const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
         dayNames.forEach(day => {
             const dayNameEl = document.createElement('div');
@@ -148,26 +161,51 @@ document.addEventListener('DOMContentLoaded', () => {
             dayNameEl.textContent = day;
             calendarGridEl.appendChild(dayNameEl);
         });
-        for (let i = 0; i < firstDayOfMonth; i++) calendarGridEl.appendChild(document.createElement('div'));
+
+        for (let i = 0; i < firstDayOfMonth; i++) {
+            calendarGridEl.appendChild(document.createElement('div'));
+        }
+
         for (let day = 1; day <= daysInMonth; day++) {
             const dayCell = document.createElement('div');
             dayCell.className = 'day';
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             dayCell.dataset.date = dateStr;
+
             const dayNumberEl = document.createElement('span');
             dayNumberEl.textContent = day;
             dayCell.appendChild(dayNumberEl);
+
             const record = records.find(r => r.date === dateStr);
             if (record && record.studyTimeMinutes > 0) {
                 const studyTimeEl = document.createElement('div');
                 studyTimeEl.className = 'study-time';
                 studyTimeEl.textContent = minutesToHHMM(record.studyTimeMinutes);
                 dayCell.appendChild(studyTimeEl);
+
+                if (record.tags && record.tags.length > 0) {
+                    const tagsContainer = document.createElement('div');
+                    tagsContainer.className = 'tags-container-calendar';
+                    record.tags.slice(0, 2).forEach(tag => {
+                        const tagEl = document.createElement('span');
+                        tagEl.className = 'badge bg-secondary me-1 mb-1';
+                        tagEl.textContent = tag;
+                        tagsContainer.appendChild(tagEl);
+                    });
+                    if (record.tags.length > 2) {
+                        const moreEl = document.createElement('span');
+                        moreEl.className = 'badge bg-light text-dark';
+                        moreEl.textContent = `+${record.tags.length - 2}`;
+                        tagsContainer.appendChild(moreEl);
+                    }
+                    dayCell.appendChild(tagsContainer);
+                }
             }
-            const today = new Date();
-            if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
-                dayCell.classList.add('bg-primary', 'text-white');
+
+            if (year === todayYear && month === todayMonth && day === todayDate) {
+                dayCell.classList.add('bg-primary', 'text-white', 'today');
             }
+
             dayCell.addEventListener('click', () => navigateTo('record', { date: dateStr }));
             calendarGridEl.appendChild(dayCell);
         }
@@ -178,9 +216,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         const today = new Date();
-        document.getElementById('dashboard-date').textContent = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+        const dashboardDateEl = document.getElementById('dashboard-date');
+        if (dashboardDateEl) {
+            dashboardDateEl.textContent = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+        }
         const todayRecord = records.find(r => r.date === today.toISOString().split('T')[0]);
         document.getElementById('today-summary-time').textContent = minutesToHHMM(todayRecord ? todayRecord.studyTimeMinutes : 0);
+
+        const todayTagsContainer = document.getElementById('today-summary-tags');
+        if (todayTagsContainer) {
+            todayTagsContainer.innerHTML = '';
+            if (todayRecord && todayRecord.tags && todayRecord.tags.length > 0) {
+                // For the summary card, use a different badge color and show all tags
+                todayRecord.tags.forEach(tag => {
+                    const tagEl = document.createElement('span');
+                    // Using a light badge on a primary background for better contrast
+                    tagEl.className = 'badge bg-light text-primary me-1';
+                    tagEl.textContent = tag;
+                    todayTagsContainer.appendChild(tagEl);
+                });
+            }
+        }
+
         let totalMonth = 0, weekDay = 0, weekend = 0;
         const weekDayRecords = new Set(), weekendRecords = new Set(), categoryData = {};
         records.forEach(r => {
@@ -458,7 +515,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 rawEndTime: document.getElementById('end-time').value,
                 rawBreakTimes: rawBreaks,
                 memo: document.getElementById('memo-input').value,
-                category: document.getElementById('record-category').value
+                category: document.getElementById('record-category').value,
+                tags: document.getElementById('tags-input').value.split(',').map(t => t.trim()).filter(t => t)
             };
             const records = getLearningRecords();
             const idx = records.findIndex(r => r.date === date);

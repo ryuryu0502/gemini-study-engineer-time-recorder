@@ -351,6 +351,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateDashboard();
             } else alert('有効な目標時間を時間単位で入力してください。');
         });
+
+        document.getElementById('install-pwa-button').addEventListener('click', () => {
+            const installButton = document.getElementById('install-pwa-button');
+            if (deferredPrompt && installButton) {
+                // Hide the button immediately on click
+                installButton.style.display = 'none';
+
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the A2HS prompt');
+                    } else {
+                        console.log('User dismissed the A2HS prompt');
+                    }
+                    // The prompt is a one-time use event.
+                    deferredPrompt = null;
+                });
+            }
+        });
+
         document.getElementById('backup-button').addEventListener('click', () => {
             const data = { records: getLearningRecords(), categories: getStudyCategories(), goal: getMonthlyGoal() };
             const str = JSON.stringify(data, null, 2);

@@ -132,3 +132,17 @@ body {
 .day.bg-primary .study-time {
     color: #fff;
 }
+
+/* --- Tags in Calendar --- */
+.tags-container-calendar {
+    margin-top: 4px;
+    line-height: 1.2;
+    overflow: hidden;
+    max-height: 34px; /* Adjust based on badge size and line height */
+}
+
+.tags-container-calendar .badge {
+    font-size: 0.7em; /* Make badges smaller to fit */
+    padding: .2em .4em;
+    font-weight: 500;
+}

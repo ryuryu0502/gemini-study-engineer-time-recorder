@@ -21,9 +21,10 @@
 
             <!-- Today's Summary -->
             <div class="card bg-primary text-white mb-4">
-                <div class="card-body">
+                <div class="card-body text-center">
                     <h5 class="card-title">今日の学習時間</h5>
-                    <p id="today-summary-time" class="display-4">00:00</p>
+                    <h2 id="today-summary-time" class="display-4 mb-3">00:00</h2>
+                    <div id="today-summary-tags"></div>
                 </div>
             </div>
 
@@ -175,6 +176,11 @@
                         <div class="mb-3">
                             <label for="memo-input" class="form-label">メモ</label>
                             <textarea class="form-control" id="memo-input" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tags-input" class="form-label">タグ</label>
+                            <input type="text" class="form-control" id="tags-input" placeholder="例: #プロジェクトA, #資料作成">
+                            <div class="form-text">カンマ（,）区切りで複数入力できます。</div>
                         </div>
                         <div class="d-grid gap-2 mt-4">
                             <button type="submit" class="btn btn-primary">保存</button>
